@@ -21,6 +21,7 @@
 #include <iostream>
 #include <vector>
 #include "json/json.h"
+#include "jwt-cpp/jwt.h"
 #include "casdoor_user.h"
 
 class CasdoorConfig {
@@ -45,11 +46,11 @@ public:
 	 */
 	CasdoorConfig(std::string endpoint, std::string client_id, std::string client_secret, std::string certificate, std::string org_name);
 
-	std::string GetOAuthLink(const std::string& redirect_uri, const std::string& state, const std::string& response_type="code", const std::string& scope="read");
+	std::string GetOAuthLink(const std::string& redirect_uri, const std::string& state, const std::string& response_type, const std::string& scope);
 
 	std::string GetOAuthToken(const std::string& code);
 
-	std::string ParseJwtToken(const std::string& token);
+	jwt::decoded_jwt<jwt::traits::kazuho_picojson> ParseJwtToken(const std::string& token);
 
 	Json::Value* GetUsers();
 
@@ -62,4 +63,6 @@ public:
 	Json::Value* UpdateUser(CasdoorUser user);
 
 	Json::Value* DeleteUser(CasdoorUser user);
+
+	inline std::string getClientId() {return m_client_id;}
 };
