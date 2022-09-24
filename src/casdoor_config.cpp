@@ -81,9 +81,7 @@ std::string CasdoorConfig::GetOAuthToken(const std::string& code) {
 };
 
 std::string CasdoorConfig::ParseJwtToken(const std::string& token) {
-	auto decoded = jwt::decode(token);
-
-	return decoded.get_payload();
+	return jwt::decode(token);
 };
 
 Json::Value* CasdoorConfig::GetUsers() {
