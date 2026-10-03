@@ -1,6 +1,11 @@
 # casdoor-cpp-sdk
 
 [![CI](https://github.com/casdoor/casdoor-cpp-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/casdoor/casdoor-cpp-sdk/actions/workflows/ci.yml)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus)](https://en.cppreference.com/w/cpp/17)
+[![CMake](https://img.shields.io/badge/CMake-3.16%2B-064F8C?logo=cmake)](https://cmake.org)
+[![License](https://img.shields.io/github/license/casdoor/casdoor-cpp-sdk)](https://github.com/casdoor/casdoor-cpp-sdk/blob/master/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/casdoor/casdoor-cpp-sdk)](https://github.com/casdoor/casdoor-cpp-sdk/commits/master)
+[![GitHub issues](https://img.shields.io/github/issues/casdoor/casdoor-cpp-sdk)](https://github.com/casdoor/casdoor-cpp-sdk/issues)
 [![Discord](https://img.shields.io/discord/1022748306096537660?logo=discord&label=discord&color=5865F2)](https://discord.gg/5rPsrAzK7S)
 
 Casdoor's SDK for C++. It signs users in with [Casdoor](https://casdoor.org) (OAuth 2.0 authorization code flow), verifies the tokens Casdoor issues, and manages users through the Casdoor API.
