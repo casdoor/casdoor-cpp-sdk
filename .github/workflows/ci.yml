@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake g++ libssl-dev jq
+
+      - name: Start local Casdoor
+        run: |
+          docker run -d --name casdoor \
+            -p 8000:8000 \
+            -e driverName=sqlite \
+            -e dataSourceName='file:casdoor.db?cache=shared' \
+            -e initDataFile=/init_data.json \
+            -v "$PWD/.ci/casdoor/init_data.json:/init_data.json:ro" \
+            casbin/casdoor-all-in-one
+
+          for i in {1..60}; do
+            if curl -fsS http://localhost:8000 >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs casdoor
+          exit 1
+
+      - name: Fetch the built-in cert of Casdoor
+        run: |
+          curl -fsS -u casdoor-go-sdk-ci-client:casdoor-go-sdk-ci-secret \
+            "http://localhost:8000/api/get-cert?id=admin/cert-built-in" \
+            | jq -er .data.certificate > tests/data/casdoor.crt
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror"
+          cmake --build build -j
+
+      - name: Test
+        env:
+          CASDOOR_TEST_ENDPOINT: http://localhost:8000
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Dump Casdoor logs
+        if: failure()
+        run: docker logs casdoor
