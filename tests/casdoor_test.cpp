@@ -446,10 +446,15 @@ void LiveTests(const std::string& endpoint) {
         // a recharge of the organization doesn't need a user balance, so it can be added in CI
         casdoor::Object transaction = {{"owner", org}, {"application", "app-casbin"}, {"domain", "https://casdoor.ai"},
                                        {"category", "Recharge"}, {"type", "Recharge"}, {"tag", "Organization"},
-                                       {"amount", 100}, {"currency", "USD"}, {"state", "Paid"}};
+                                       {"amount", 100}, {"currency", "USD"}, {"user", "admin"}, {"state", "Paid"}};
         client.AddTransactionWithDryRun(transaction, true);
         const std::string name = client.AddTransaction(transaction);
         CHECK(!name.empty());
+        bool found = false;
+        for (const casdoor::Object& item : client.GetUserTransactions("admin")) {
+            found = found || item.value("name", "") == name;
+        }
+        CHECK(found);
         std::optional<casdoor::Object> got = client.GetTransaction(name);
         CHECK(got.has_value());
         if (got) {
@@ -458,6 +463,25 @@ void LiveTests(const std::string& endpoint) {
             CHECK(client.DeleteTransaction(*got));
         }
         CHECK(!client.GetTransaction(name).has_value());
+    });
+
+    Run("live: record", [&] {
+        const std::string name = random_name("Record");
+        client.AddRecord({{"owner", org}, {"name", name}, {"organization", org}, {"user", "admin"}, {"action", "test-record"}});
+
+        // reading the records needs the access token of an admin user
+        casdoor::Token token = client.GetOAuthTokenByPassword(GetEnv("CASDOOR_TEST_USERNAME", "admin"),
+                                                               GetEnv("CASDOOR_TEST_PASSWORD", "123"));
+        const casdoor::Client admin_client = client.WithAccessToken(token.access_token);
+
+        bool found = false;
+        for (const casdoor::Object& item : admin_client.GetRecords()) {
+            found = found || item.value("name", "") == name;
+        }
+        CHECK(found);
+        std::optional<casdoor::Object> got = admin_client.GetRecord(name);
+        CHECK(got && got->value("name", "") == name);
+        CHECK(!admin_client.GetRecord(name + "_missing").has_value());
     });
 
     Run("live: order and pay", [&] {

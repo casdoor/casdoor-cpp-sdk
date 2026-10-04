@@ -830,7 +830,8 @@ std::optional<Object> Client::GetTransaction(const std::string& name) const {
 }
 
 std::vector<Object> Client::GetUserTransactions(const std::string& user_name) const {
-    return GetList("get-user-transactions", {{"owner", config_.organization_name}, {"user", user_name}});
+    // Casdoor has no get-user-transactions API, get-transactions filters the transactions by user
+    return GetList("get-transactions", {{"owner", config_.organization_name}, {"field", "user"}, {"value", user_name}});
 }
 
 std::string Client::AddTransaction(const Object& transaction) const {
@@ -965,8 +966,20 @@ Page Client::GetPaginationRecords(int p, int page_size, const QueryMap& query) c
     return GetPage("get-records", p, page_size, params);
 }
 
+// Casdoor has no API to get a single record, so GetRecord() searches the records by name. Like the other APIs
+// that read records, it needs the access token of an admin user, see WithAccessToken().
 std::optional<Object> Client::GetRecord(const std::string& name) const {
-    return GetOne("get-record", {{"id", GetId(name)}});
+    const size_t slash = name.rfind('/');
+    const std::string record_name = slash == std::string::npos ? name : name.substr(slash + 1);
+
+    // the name filter matches the records whose names contain the given name
+    Page page = GetPaginationRecords(1, 100, {{"field", "name"}, {"value", record_name}});
+    for (const Object& record : page.items) {
+        if (record.value("name", "") == record_name) {
+            return record;
+        }
+    }
+    return std::nullopt;
 }
 
 bool Client::AddRecord(Object record) const {
